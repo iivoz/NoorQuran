@@ -5,7 +5,9 @@ import PrayerTimes from "@/components/PrayerTimes";
 const PrayerPage = () => {
   return (
     <AppLayout>
-      <PrayerTimes />
+      <div className="container max-w-lg mx-auto px-4 py-6">
+        <PrayerTimes />
+      </div>
     </AppLayout>
   );
 };

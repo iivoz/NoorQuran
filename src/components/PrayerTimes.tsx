@@ -1,59 +1,114 @@
 
 import { useState, useEffect } from "react";
-import { getPrayerTimes, getNextPrayer, getTimeUntilNextPrayer, PrayerTimes as PrayerTimesType } from "@/services/prayerTimesAPI";
+import { 
+  getPrayerTimes, 
+  getNextPrayer, 
+  getTimeUntilNextPrayer, 
+  PrayerTimes as PrayerTimesType,
+  PRAYER_CALCULATION_METHODS
+} from "@/services/prayerTimesAPI";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const PrayerTimes = () => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesType | null>(null);
   const [nextPrayer, setNextPrayer] = useState<{ name: string; time: string } | null>(null);
   const [timeUntil, setTimeUntil] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [calculationMethod, setCalculationMethod] = useState<number>(() => {
+    // استرجاع طريقة الحساب المحفوظة أو استخدام القيمة الافتراضية (3)
+    const savedMethod = localStorage.getItem("prayerCalculationMethod");
+    return savedMethod ? Number(savedMethod) : 3;
+  });
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   
-  useEffect(() => {
-    const fetchPrayerTimes = async () => {
-      setIsLoading(true);
-      try {
-        // Try to get location
+  // استرجاع الموقع وتخزينه
+  const getLocation = (): Promise<{latitude: number; longitude: number}> => {
+    return new Promise((resolve, reject) => {
+      if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          async (position) => {
+          (position) => {
             const { latitude, longitude } = position.coords;
-            const times = await getPrayerTimes(latitude, longitude);
-            
-            if (times) {
-              setPrayerTimes(times);
-              const next = getNextPrayer(times);
-              setNextPrayer(next);
-              setTimeUntil(getTimeUntilNextPrayer(next));
-            }
-            setIsLoading(false);
+            const locationData = { latitude, longitude };
+            setLocation(locationData);
+            localStorage.setItem("prayerLocation", JSON.stringify(locationData));
+            resolve(locationData);
           },
           (error) => {
-            console.error("Error getting location:", error);
-            toast.error("فشل في الوصول إلى موقعك. الرجاء تفعيل خدمة تحديد الموقع");
-            setIsLoading(false);
+            console.error("خطأ في الحصول على الموقع:", error);
+            // محاولة استخدام الموقع المخزن مسبقًا
+            const savedLocation = localStorage.getItem("prayerLocation");
+            if (savedLocation) {
+              const parsedLocation = JSON.parse(savedLocation);
+              setLocation(parsedLocation);
+              resolve(parsedLocation);
+            } else {
+              toast.error("فشل في الوصول إلى موقعك. الرجاء تفعيل خدمة تحديد الموقع");
+              reject(error);
+            }
           }
         );
-      } catch (error) {
-        console.error("Error fetching prayer times:", error);
-        setIsLoading(false);
+      } else {
+        const error = new Error("متصفحك لا يدعم خدمة تحديد الموقع");
+        toast.error("متصفحك لا يدعم خدمة تحديد الموقع");
+        reject(error);
       }
-    };
-    
+    });
+  };
+  
+  const fetchPrayerTimes = async () => {
+    setIsLoading(true);
+    try {
+      let coords;
+      
+      // استخدام الموقع الحالي أو محاولة الحصول على موقع جديد
+      if (location) {
+        coords = location;
+      } else {
+        coords = await getLocation();
+      }
+      
+      const times = await getPrayerTimes(coords.latitude, coords.longitude, calculationMethod);
+      
+      if (times) {
+        setPrayerTimes(times);
+        const next = getNextPrayer(times);
+        setNextPrayer(next);
+        setTimeUntil(getTimeUntilNextPrayer(next));
+        
+        // حفظ طريقة الحساب إذا تغيرت
+        localStorage.setItem("prayerCalculationMethod", calculationMethod.toString());
+      }
+    } catch (error) {
+      console.error("خطأ في جلب مواقيت الصلاة:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const handleMethodChange = (value: string) => {
+    const methodId = Number(value);
+    setCalculationMethod(methodId);
+  };
+  
+  useEffect(() => {
     fetchPrayerTimes();
     
-    // Update time until next prayer
+    // تحديث الوقت المتبقي حتى الصلاة القادمة
     const interval = setInterval(() => {
       if (prayerTimes && nextPrayer) {
         setTimeUntil(getTimeUntilNextPrayer(nextPrayer));
       }
-    }, 60000); // Update every minute
+    }, 60000); // تحديث كل دقيقة
     
     return () => clearInterval(interval);
-  }, []);
+  }, [calculationMethod]);
   
-  // Update next prayer when prayer times change
+  // تحديث الصلاة القادمة عند تغيير مواقيت الصلاة
   useEffect(() => {
     if (prayerTimes) {
       const next = getNextPrayer(prayerTimes);
@@ -66,11 +121,38 @@ const PrayerTimes = () => {
     <div className="w-full">
       <h1 className="text-2xl font-bold mb-6 text-center">أوقات الصلاة</h1>
       
+      {/* اختيار طريقة حساب مواقيت الصلاة */}
+      <div className="mb-6">
+        <div className="flex gap-2 items-center">
+          <Select value={calculationMethod.toString()} onValueChange={handleMethodChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="اختر طريقة حساب مواقيت الصلاة" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRAYER_CALCULATION_METHODS.map((method) => (
+                <SelectItem key={method.id} value={method.id.toString()}>
+                  {method.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => fetchPrayerTimes()} 
+            disabled={isLoading}
+            title="تحديث مواقيت الصلاة"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+      </div>
+      
       {isLoading ? (
         <PrayerTimesSkeleton />
       ) : prayerTimes ? (
         <>
-          {/* Next Prayer Card */}
+          {/* بطاقة الصلاة القادمة */}
           <Card className="p-6 mb-6 bg-primary/5 border-primary/20">
             <h2 className="text-lg font-semibold mb-2">الصلاة القادمة</h2>
             {nextPrayer && (
@@ -86,12 +168,13 @@ const PrayerTimes = () => {
             )}
           </Card>
           
-          {/* Date Display */}
+          {/* عرض التاريخ */}
           <div className="text-center mb-6">
-            <p className="text-lg font-medium">{prayerTimes.date}</p>
+            <p className="text-lg font-medium">{prayerTimes.hijriDate}</p>
+            <p className="text-sm text-muted-foreground">{prayerTimes.date}</p>
           </div>
           
-          {/* Prayer Times List */}
+          {/* قائمة مواقيت الصلاة */}
           <div className="space-y-3">
             <PrayerTimeItem name="الفجر" time={prayerTimes.fajr} isActive={nextPrayer?.name === "الفجر"} />
             <PrayerTimeItem name="الشروق" time={prayerTimes.sunrise} isActive={nextPrayer?.name === "الشروق"} />
@@ -106,6 +189,13 @@ const PrayerTimes = () => {
           <p className="text-lg text-muted-foreground">
             فشل في جلب أوقات الصلاة. الرجاء التأكد من تفعيل خدمة تحديد الموقع والمحاولة مرة أخرى.
           </p>
+          <Button 
+            variant="default" 
+            onClick={fetchPrayerTimes} 
+            className="mt-4"
+          >
+            إعادة المحاولة
+          </Button>
         </div>
       )}
     </div>

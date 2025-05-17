@@ -9,6 +9,8 @@ export interface PrayerTimes {
   maghrib: string;
   isha: string;
   date: string;
+  hijriDate: string;
+  method: number;
 }
 
 export interface PrayerTimesResponse {
@@ -34,27 +36,60 @@ export interface PrayerTimesResponse {
         year: string;
       };
     };
+    meta: {
+      method: {
+        id: number;
+        name: string;
+      };
+    };
   };
 }
 
+// طرق حساب مواقيت الصلاة المتاحة
+export const PRAYER_CALCULATION_METHODS = [
+  { id: 1, name: "جامعة أم القرى، مكة المكرمة" },
+  { id: 2, name: "الجمعية الإسلامية لأمريكا الشمالية (ISNA)" },
+  { id: 3, name: "رابطة العالم الإسلامي" },
+  { id: 4, name: "جامعة العلوم الإسلامية، كراتشي" },
+  { id: 5, name: "الاتحاد الإسلامي العالمي" },
+  { id: 7, name: "هيئة المساحة المصرية" },
+  { id: 8, name: "معهد الجيوفيزياء، جامعة طهران" },
+  { id: 9, name: "المنطقة الإسلامية لأمريكا الشمالية" },
+  { id: 10, name: "الكويت" },
+  { id: 11, name: "قطر" },
+  { id: 12, name: "إدارة البحوث الإسلامية، سنغافورة" },
+  { id: 13, name: "عمان" },
+  { id: 14, name: "الهيئة العامة للمساحة، الإمارات العربية المتحدة" },
+  { id: 15, name: "الأردن" },
+];
+
 export const getPrayerTimes = async (
   latitude: number, 
-  longitude: number
+  longitude: number,
+  methodId: number = 3 // استخدام رابطة العالم الإسلامي افتراضياً
 ): Promise<PrayerTimes | null> => {
   try {
-    // Get current date
+    // الحصول على التاريخ الحالي
     const today = new Date();
     const day = today.getDate();
     const month = today.getMonth() + 1;
     const year = today.getFullYear();
     
-    const response = await fetch(
-      `https://api.aladhan.com/v1/timings/${day}-${month}-${year}?latitude=${latitude}&longitude=${longitude}&method=2`
-    );
+    const url = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}?latitude=${latitude}&longitude=${longitude}&method=${methodId}`;
+    
+    console.log(`جاري طلب مواقيت الصلاة من: ${url}`);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`فشل في جلب البيانات: ${response.status} ${response.statusText}`);
+    }
     
     const data: PrayerTimesResponse = await response.json();
     
     if (data.code === 200 && data.status === "OK") {
+      console.log("تم استلام بيانات مواقيت الصلاة بنجاح:", data);
+      
       return {
         fajr: data.data.timings.Fajr,
         sunrise: data.data.timings.Sunrise,
@@ -62,13 +97,15 @@ export const getPrayerTimes = async (
         asr: data.data.timings.Asr,
         maghrib: data.data.timings.Maghrib,
         isha: data.data.timings.Isha,
-        date: data.data.date.hijri.date + " " + data.data.date.hijri.month.ar + " " + data.data.date.hijri.year
+        date: data.data.date.readable,
+        hijriDate: data.data.date.hijri.date + " " + data.data.date.hijri.month.ar + " " + data.data.date.hijri.year,
+        method: data.data.meta.method.id
       };
     } else {
       throw new Error(data.status || "فشل في جلب أوقات الصلاة");
     }
   } catch (error) {
-    console.error("Error fetching prayer times:", error);
+    console.error("حدث خطأ أثناء جلب مواقيت الصلاة:", error);
     toast.error("فشل في جلب أوقات الصلاة");
     return null;
   }
@@ -99,7 +136,7 @@ export const getNextPrayer = (prayerTimes: PrayerTimes): { name: string; time: s
     }
   }
   
-  // If no prayer times are found after current time, return the first prayer of the next day
+  // إذا لم يتم العثور على صلاة بعد الوقت الحالي، ارجع صلاة الفجر لليوم التالي
   return prayers[0];
 };
 
@@ -110,12 +147,12 @@ export const getTimeUntilNextPrayer = (nextPrayer: { name: string; time: string 
   const prayerTime = new Date();
   prayerTime.setHours(hours, minutes, 0, 0);
   
-  // If prayer time is earlier than current time, it's for the next day
+  // إذا كان وقت الصلاة أبكر من الوقت الحالي، فهو لليوم التالي
   if (prayerTime < currentTime) {
     prayerTime.setDate(prayerTime.getDate() + 1);
   }
   
-  // Calculate difference in minutes
+  // حساب الفرق بالدقائق
   const diffMs = prayerTime.getTime() - currentTime.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   
