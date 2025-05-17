@@ -54,6 +54,18 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         {children}
       </main>
       
+      {/* Footer with Telegram Link */}
+      <footer className="bg-background/80 backdrop-blur-sm border-t border-border py-3 text-center text-xs text-muted-foreground">
+        <a 
+          href="https://t.me/iivoz" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 transition-colors hover:text-islamic-gold"
+        >
+          تواصل معنا على تيليجرام: @iivoz
+        </a>
+      </footer>
+      
       {/* Navigation Footer */}
       <nav className="bg-background/80 backdrop-blur-sm border-t border-border sticky bottom-0">
         <div className="container mx-auto flex justify-around py-2">
