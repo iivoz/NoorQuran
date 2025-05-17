@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,20 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Islamic themed colors
+				islamic: {
+					'olive': '#94A66A',  // Olive green
+					'olive-light': '#F2FCE2',
+					'sky': '#7BADD9',    // Sky blue
+					'sky-light': '#D3E4FD',
+					'gold': '#D4AF37',   // Soft gold
+					'gold-light': '#F9F4D9',
 				}
+			},
+			fontFamily: {
+				'arabic': ['Amiri', 'serif'],
+				'quran': ['Scheherazade New', 'serif']
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +98,26 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'ripple': {
+					'0%': { 
+						transform: 'scale(0)',
+						opacity: '1' 
+					},
+					'100%': { 
+						transform: 'scale(4)',
+						opacity: '0' 
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'ripple': 'ripple 0.6s linear'
+			},
+			backgroundImage: {
+				'islamic-pattern': "url('/patterns/islamic-pattern.svg')",
+				'islamic-pattern-light': "url('/patterns/islamic-pattern-light.svg')"
 			}
 		}
 	},
