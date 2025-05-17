@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 export interface PrayerTimes {
@@ -13,40 +12,27 @@ export interface PrayerTimes {
   method: number;
 }
 
-export interface PrayerTimesResponse {
-  code: number;
-  status: string;
+// استجابة API الأوقاف الإماراتية
+export interface EmiratesAwqafResponse {
+  code: string;
   data: {
-    timings: {
+    PrayersAwqatList: {
+      Date: string;
+      Day: string;
       Fajr: string;
       Sunrise: string;
       Dhuhr: string;
       Asr: string;
       Maghrib: string;
       Isha: string;
-    };
-    date: {
-      readable: string;
-      timestamp: string;
-      hijri: {
-        date: string;
-        month: {
-          ar: string;
-        };
-        year: string;
-      };
-    };
-    meta: {
-      method: {
-        id: number;
-        name: string;
-      };
-    };
+    }[];
+    HijriDate: string;
   };
 }
 
 // طرق حساب مواقيت الصلاة المتاحة
 export const PRAYER_CALCULATION_METHODS = [
+  { id: 101, name: "الهيئة العامة للشؤون الإسلامية والأوقاف - الإمارات" },
   { id: 1, name: "جامعة أم القرى، مكة المكرمة" },
   { id: 2, name: "الجمعية الإسلامية لأمريكا الشمالية (ISNA)" },
   { id: 3, name: "رابطة العالم الإسلامي" },
@@ -66,7 +52,72 @@ export const PRAYER_CALCULATION_METHODS = [
 export const getPrayerTimes = async (
   latitude: number, 
   longitude: number,
-  methodId: number = 3 // استخدام رابطة العالم الإسلامي افتراضياً
+  methodId: number = 101 // استخدام API الأوقاف الإماراتية افتراضياً
+): Promise<PrayerTimes | null> => {
+  try {
+    // إذا كان methodId = 101 استخدم API الأوقاف الإماراتية
+    if (methodId === 101) {
+      return await getEmiratesAwqafPrayerTimes();
+    } else {
+      return await getAladhanPrayerTimes(latitude, longitude, methodId);
+    }
+  } catch (error) {
+    console.error("حدث خطأ أثناء جلب مواقيت الصلاة:", error);
+    toast.error("فشل في جلب أوقات الصلاة");
+    return null;
+  }
+};
+
+// الحصول على مواقيت الصلاة من API الأوقاف الإماراتية
+export const getEmiratesAwqafPrayerTimes = async (): Promise<PrayerTimes | null> => {
+  try {
+    const today = new Date();
+    const formattedDate = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+
+    // استخدام واجهة API هيئة الأوقاف الإماراتية
+    const url = `https://www.awqaf.gov.ae/api/prayer?date=${formattedDate}&location=1`;
+    
+    console.log(`جاري طلب مواقيت الصلاة من الأوقاف الإماراتية: ${url}`);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`فشل في جلب البيانات من الأوقاف الإماراتية: ${response.status} ${response.statusText}`);
+    }
+    
+    const data: EmiratesAwqafResponse = await response.json();
+    
+    if (data.code === "200" && data.data.PrayersAwqatList.length > 0) {
+      console.log("تم استلام بيانات مواقيت الصلاة من الأوقاف الإماراتية بنجاح:", data);
+      
+      const prayerData = data.data.PrayersAwqatList[0];
+      
+      return {
+        fajr: prayerData.Fajr,
+        sunrise: prayerData.Sunrise,
+        dhuhr: prayerData.Dhuhr,
+        asr: prayerData.Asr,
+        maghrib: prayerData.Maghrib,
+        isha: prayerData.Isha,
+        date: prayerData.Date,
+        hijriDate: data.data.HijriDate || "",
+        method: 101
+      };
+    } else {
+      throw new Error("فشل في جلب أوقات الصلاة من الأوقاف الإماراتية");
+    }
+  } catch (error) {
+    console.error("حدث خطأ أثناء جلب مواقيت الصلاة من الأوقاف الإماراتية:", error);
+    toast.error("فشل في جلب أوقات الصلاة من الأوقاف الإماراتية");
+    return null;
+  }
+};
+
+// الحصول على مواقيت الصلاة من API أذان (كما كان سابقاً)
+export const getAladhanPrayerTimes = async (
+  latitude: number, 
+  longitude: number,
+  methodId: number = 3
 ): Promise<PrayerTimes | null> => {
   try {
     // الحصول على التاريخ الحالي
@@ -77,18 +128,18 @@ export const getPrayerTimes = async (
     
     const url = `https://api.aladhan.com/v1/timings/${day}-${month}-${year}?latitude=${latitude}&longitude=${longitude}&method=${methodId}`;
     
-    console.log(`جاري طلب مواقيت الصلاة من: ${url}`);
+    console.log(`جاري طلب مواقيت الصلاة من أذان: ${url}`);
     
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`فشل في جلب البيانات: ${response.status} ${response.statusText}`);
+      throw new Error(`فشل في جلب البيانات من أذان: ${response.status} ${response.statusText}`);
     }
     
-    const data: PrayerTimesResponse = await response.json();
+    const data = await response.json();
     
     if (data.code === 200 && data.status === "OK") {
-      console.log("تم استلام بيانات مواقيت الصلاة بنجاح:", data);
+      console.log("تم استلام بيانات مواقيت الصلاة من أذان بنجاح:", data);
       
       return {
         fajr: data.data.timings.Fajr,
@@ -102,11 +153,11 @@ export const getPrayerTimes = async (
         method: data.data.meta.method.id
       };
     } else {
-      throw new Error(data.status || "فشل في جلب أوقات الصلاة");
+      throw new Error(data.status || "فشل في جلب أوقات الصلاة من أذان");
     }
   } catch (error) {
-    console.error("حدث خطأ أثناء جلب مواقيت الصلاة:", error);
-    toast.error("فشل في جلب أوقات الصلاة");
+    console.error("حدث خطأ أثناء جلب مواقيت الصلاة من أذان:", error);
+    toast.error("فشل في جلب أوقات الصلاة من أذان");
     return null;
   }
 };

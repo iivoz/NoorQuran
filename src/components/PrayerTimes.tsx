@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, MapPin } from "lucide-react";
 
 const PrayerTimes = () => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimesType | null>(null);
@@ -20,11 +20,12 @@ const PrayerTimes = () => {
   const [timeUntil, setTimeUntil] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [calculationMethod, setCalculationMethod] = useState<number>(() => {
-    // استرجاع طريقة الحساب المحفوظة أو استخدام القيمة الافتراضية (3)
+    // استرجاع طريقة الحساب المحفوظة أو استخدام القيمة الافتراضية (101 للأوقاف الإماراتية)
     const savedMethod = localStorage.getItem("prayerCalculationMethod");
-    return savedMethod ? Number(savedMethod) : 3;
+    return savedMethod ? Number(savedMethod) : 101;
   });
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationType, setLocationType] = useState<"auto" | "custom">("auto");
   
   // استرجاع الموقع وتخزينه
   const getLocation = (): Promise<{latitude: number; longitude: number}> => {
@@ -47,15 +48,22 @@ const PrayerTimes = () => {
               setLocation(parsedLocation);
               resolve(parsedLocation);
             } else {
-              toast.error("فشل في الوصول إلى موقعك. الرجاء تفعيل خدمة تحديد الموقع");
-              reject(error);
+              // استخدام موقع افتراضي إذا لم يكن هناك موقع محفوظ (دبي)
+              const defaultLocation = { latitude: 25.276987, longitude: 55.296249 };
+              setLocation(defaultLocation);
+              localStorage.setItem("prayerLocation", JSON.stringify(defaultLocation));
+              toast.warning("تم استخدام موقع افتراضي (دبي). يرجى تفعيل خدمة تحديد الموقع للحصول على أوقات صلاة أكثر دقة.");
+              resolve(defaultLocation);
             }
           }
         );
       } else {
-        const error = new Error("متصفحك لا يدعم خدمة تحديد الموقع");
-        toast.error("متصفحك لا يدعم خدمة تحديد الموقع");
-        reject(error);
+        // استخدام موقع افتراضي إذا لم يكن تحديد الموقع مدعوماً (دبي)
+        const defaultLocation = { latitude: 25.276987, longitude: 55.296249 };
+        setLocation(defaultLocation);
+        localStorage.setItem("prayerLocation", JSON.stringify(defaultLocation));
+        toast.warning("متصفحك لا يدعم خدمة تحديد الموقع. تم استخدام موقع افتراضي (دبي).");
+        resolve(defaultLocation);
       }
     });
   };
@@ -82,9 +90,11 @@ const PrayerTimes = () => {
         
         // حفظ طريقة الحساب إذا تغيرت
         localStorage.setItem("prayerCalculationMethod", calculationMethod.toString());
+        toast.success("تم تحديث مواقيت الصلاة بنجاح");
       }
     } catch (error) {
       console.error("خطأ في جلب مواقيت الصلاة:", error);
+      toast.error("فشل في تحديث مواقيت الصلاة");
     } finally {
       setIsLoading(false);
     }
@@ -145,6 +155,19 @@ const PrayerTimes = () => {
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
+        </div>
+        
+        <div className="mt-2 text-sm text-muted-foreground text-center">
+          {calculationMethod === 101 ? (
+            <p>مصدر البيانات: الهيئة العامة للشؤون الإسلامية والأوقاف - الإمارات العربية المتحدة</p>
+          ) : (
+            location && (
+              <div className="flex items-center justify-center gap-1">
+                <MapPin className="h-3 w-3" /> 
+                <span>الموقع: {location.latitude.toFixed(2)}, {location.longitude.toFixed(2)}</span>
+              </div>
+            )
+          )}
         </div>
       </div>
       
@@ -236,3 +259,4 @@ const PrayerTimesSkeleton = () => (
 );
 
 export default PrayerTimes;
+
