@@ -1,73 +1,51 @@
-# Welcome to your Lovable project
+✨ مرحبًا بك في مشروعك "تطبيق القرآن الكريم"
+🕌 نظرة عامة على التطبيق
+رابط المشروع: اضغط هنا لزيارة التطبيق
 
-## Project info
+"تطبيق القرآن الكريم" هو منصة رقمية عصرية مصممة بعناية لتجعل تلاوة القرآن، التسبيح، والمتابعة اليومية للذكر أسهل وأجمل من أي وقت مضى.
 
-**URL**: https://lovable.dev/projects/7374dee5-2e3d-4dba-8bbf-f0e2c5a68219
+🚀 ميزات التطبيق
+قراءة القرآن الكريم: واجهة أنيقة وسهلة القراءة لتصفح سور وآيات القرآن الكريم بكل سلاسة.
 
-## How can I edit this code?
+عداد الاستغفار والذكر: تتبع أذكارك اليومية واستغفارك بطريقة مرنة وممتعة.
 
-There are several ways of editing your application.
+تذكير بمواقيت الصلاة: تنبيهات دقيقة تساعدك على الحفاظ على صلاتك في وقتها.
 
-**Use Lovable**
+أدعية يومية مختارة: باقة من الأدعية المأثورة تُجدد روحك يوميًا.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7374dee5-2e3d-4dba-8bbf-f0e2c5a68219) and start prompting.
+متابعة التقدم اليومي: نظام بسيط لتتبع إنجازاتك القرآنية ورفع همتك.
 
-Changes made via Lovable will be committed automatically to this repo.
+🧰 ما التقنيات المستخدمة في بناء التطبيق؟
+تم تطوير التطبيق باستخدام أحدث التقنيات لضمان أداء سريع وتصميم جذاب:
 
-**Use your preferred IDE**
+⚡ Vite: لبناء واجهة سريعة وحديثة
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+💻 TypeScript + React: لضمان تجربة مستخدم ديناميكية وموثوقة
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🎨 Tailwind CSS + shadcn/ui: لتصميم واجهات عصرية متجاوبة
 
-Follow these steps:
+🛠 كيف يمكنني تعديل الكود؟
+1. من خلال منصة Lovable
+ابدأ بكتابة التعليمات مباشرة، وسيتم تطبيق التعديلات تلقائيًا!
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. باستخدام محرر الشيفرة الخاص بك:
+sh
+Copy
+Edit
+# 1. استنساخ المشروع
+git clone <رابط_المستودع>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. الدخول إلى مجلد المشروع
+cd <اسم_المشروع>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. تثبيت التبعيات
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. تشغيل خادم التطوير
 npm run dev
-```
+3. أو التعديل مباشرة من GitHub أو عبر GitHub Codespaces.
+🌐 هل يمكنني ربط نطاق مخصص بالتطبيق؟
+نعم! يمكنك ربط نطاق خاص بك بسهولة من خلال الإعدادات.
+توجه إلى: الإعدادات > النطاقات > "ربط نطاق"
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/7374dee5-2e3d-4dba-8bbf-f0e2c5a68219) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+📖 دليل ربط النطاق خطوة بخطوة
